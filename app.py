@@ -59,4 +59,5 @@ def Quiz():
     except Exception: abort(400)
     item = person.GetQuestion()
     return item #use render_template here
-app.run()
+if __name__ == "__main__":
+   app.run()
