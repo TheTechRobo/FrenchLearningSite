@@ -32,6 +32,16 @@ class User:
         )
     def LenQuestion(self):
         return len(self.Questions)
+    def Proptions(self):
+        if self.options["q"] == "inf":
+            self.options["q"] = self.LenQuestion()
+        self.options["q"] = int(self.options["q"])
+        self.GenQuestion()
+        self.ElapsedTimes = 0
+        self.Score = 0
+        self.MissedQuestions = []
+        self.GoodQuestions = []
+        self.Feedback = {}
 
 @app.route("/")
 def Index():
@@ -40,16 +50,9 @@ def Index():
 @app.route("/Quiz")
 def Quiz():
     try:
-        #todo cleanup
         person = User({"qset": request.args.get("qset"),"q":request.args.get("q")})
-        times = request.args.get("q")
-    except Exception:
-        abort(400)
-    person.GenQuestion()
-    if times == "inf":
-        times = person.LenQuestion()
-    try: times = int(times)
+        person.Proptions()
     except Exception: abort(400)
     item = person.GetQuestion()
-    return item
+    return item #use render_template here
 app.run()
