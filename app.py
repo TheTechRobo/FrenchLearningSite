@@ -1,6 +1,10 @@
 import flask, random
 from flask import abort, render_template, request
-from QUESTION_DATABASE import QUESTION_DATABASE
+try:
+    from QUESTION_DATABASE import QUESTION_DATABASE
+except ImportError:
+    print("WARNING: Could not load QUESTION_DATABASE file! Proceeding with defaults.")
+    QUESTION_DATABASE = {"hi":{"hi": "bye"}}
 app = flask.Flask(__name__)
 
 class User:
