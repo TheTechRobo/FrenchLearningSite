@@ -1,55 +1,12 @@
-import flask, random
-from flask import abort, render_template, request, make_response
+import flask, random, os, json
+from flask import abort, render_template, request, make_response, session
 try:
     from QUESTION_DATABASE import QUESTION_DATABASE
 except ImportError:
     print("WARNING: Could not load QUESTION_DATABASE file! Proceeding with defaults.")
     QUESTION_DATABASE = {"hi":{"hi": "bye"}, "dd": {"hi": 4}}
 app = flask.Flask(__name__)
-Sessions = {}
-class User:
-    def __init__(self, options):
-        self.options = options
-    def GetQuestion(self):
-        print(self.Questions)
-        try:
-            pos = random.choice(list(self.Questions))
-        except IndexError:
-            return False
-        item = self.Questions[pos]
-        Return = {pos:item}
-        self.Questions.pop(pos)
-        return Return
-    def GenQuestion(self):
-        print(f"Options: {self.options}")
-        print(f"Qset: {self.options['qset']}")
-        qset = self.options["qset"]
-        self.Questions = QUESTION_DATABASE[self.options["qset"]]
-    def LoaQuestion(self):
-        questions = (
-            {
-                "What is the developer?": {"smart": "Ha!", "dumb": "Meanie"},
-                "Is this website good?": {"y": "Thank you very much!", "meh": "Thanks...I guess.", "n": "D:"}
-            }
-        )
-        item = random.choice(
-            questions.keys()
-        )
-        return (
-            item, questions[item]
-        )
-    def LenQuestion(self):
-        return len(self.Questions)
-    def Proptions(self):
-        self.GenQuestion()
-        if self.options["q"] == "inf":
-            self.options["q"] = self.LenQuestion()
-        self.options["q"] = int(self.options["q"])
-        self.ElapsedTimes = 0
-        self.Score = 0
-        self.MissedQuestions = []
-        self.GoodQuestions = []
-        self.Feedback = {}
+app.secret_key = os.urandom(42)
 
 @app.route("/")
 def Index():
@@ -57,23 +14,25 @@ def Index():
 
 @app.route("/Quiz")
 def Quiz():
-    resp = make_response() #https://www.askpython.com/python-modules/flask/flask-cookies
     try:
-        token = request.cookies.get("FrenchLearnerTtRSession:", None)
-        if token is None:
-            raise Exception
-        Sessions[token]
+        session['exist']
     except Exception as ename:
-        print("token not found.")
-        token = str(random.randint(0,99999999999999999999))
-        resp.set_cookie('FrenchLearnerTtRSession',token)
         try:
-            Sessions[token] = User({"qset": request.args.get("qset"),"q":request.args.get("q")})
-            Sessions[token].Proptions()
+            session['options'] = {"qset": request.args.get("qset"),"q":request.args.get("q")}
+            session['exist'] = True
+            session['qset'] = {"load": {"What is the developer?": {"smart": "Ha!", "dumb": "Meanie"}}, "main":QUESTION_DATABASE[session['options']['qset']]}
+            print(session['qset'])
         except Exception as ename:
             abort(400)
-    item = Sessions[token].GetQuestion()
-    print(Sessions)
-    return f"{item}; Token: {token}" #use render_template here
+    try:
+        pos=random.choice(list(session['qset']['main']))
+        item=f"pos:{session['qset']['main'][pos]}"
+        del session['qset']['main'][pos]
+    except IndexError:
+        item = False
+    if not item:
+        return "All finished! Let's head back, okay?"
+    print(session)
+    return f"{item}" #use render_template here
 if __name__ == "__main__":
    app.run()
