@@ -11,6 +11,7 @@ class User:
     def __init__(self, options):
         self.options = options
     def GetQuestion(self):
+        print(self.Questions)
         try:
             pos = random.choice(list(self.Questions))
         except IndexError:
@@ -65,13 +66,14 @@ def Quiz():
     except Exception as ename:
         print("token not found.")
         token = str(random.randint(0,99999999999999999999))
-        resp.set_cookie('FrenchLearnerTtRSession',token, domain='thetechrobo.pythonanywhere.com')
+        resp.set_cookie('FrenchLearnerTtRSession',token)
         try:
             Sessions[token] = User({"qset": request.args.get("qset"),"q":request.args.get("q")})
             Sessions[token].Proptions()
         except Exception as ename:
             abort(400)
     item = Sessions[token].GetQuestion()
+    print(Sessions)
     return f"{item}; Token: {token}" #use render_template here
 if __name__ == "__main__":
    app.run()
