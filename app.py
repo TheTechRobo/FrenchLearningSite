@@ -1,17 +1,20 @@
 import flask, random
-from flask import abort, render_template, request
+from flask import abort, render_template, request, make_response
 try:
     from QUESTION_DATABASE import QUESTION_DATABASE
 except ImportError:
     print("WARNING: Could not load QUESTION_DATABASE file! Proceeding with defaults.")
-    QUESTION_DATABASE = {"hi":{"hi": "bye"}}
+    QUESTION_DATABASE = {"hi":{"hi": "bye"}, "dd": {"hi": 4}}
 app = flask.Flask(__name__)
-
+Sessions = {}
 class User:
     def __init__(self, options):
         self.options = options
     def GetQuestion(self):
-        pos = random.choice(list(self.Questions))
+        try:
+            pos = random.choice(list(self.Questions))
+        except IndexError:
+            return False
         item = self.Questions[pos]
         Return = {pos:item}
         self.Questions.pop(pos)
@@ -37,10 +40,10 @@ class User:
     def LenQuestion(self):
         return len(self.Questions)
     def Proptions(self):
+        self.GenQuestion()
         if self.options["q"] == "inf":
             self.options["q"] = self.LenQuestion()
         self.options["q"] = int(self.options["q"])
-        self.GenQuestion()
         self.ElapsedTimes = 0
         self.Score = 0
         self.MissedQuestions = []
@@ -53,11 +56,22 @@ def Index():
 
 @app.route("/Quiz")
 def Quiz():
+    resp = make_response() #https://www.askpython.com/python-modules/flask/flask-cookies
     try:
-        person = User({"qset": request.args.get("qset"),"q":request.args.get("q")})
-        person.Proptions()
-    except Exception: abort(400)
-    item = person.GetQuestion()
-    return item #use render_template here
+        token = request.cookies.get("FrenchLearnerTtRSession:", None)
+        if token is None:
+            raise Exception
+        Sessions[token]
+    except Exception as ename:
+        print("token not found.")
+        token = str(random.randint(0,99999999999999999999))
+        resp.set_cookie('FrenchLearnerTtRSession',token, domain='thetechrobo.pythonanywhere.com')
+        try:
+            Sessions[token] = User({"qset": request.args.get("qset"),"q":request.args.get("q")})
+            Sessions[token].Proptions()
+        except Exception as ename:
+            abort(400)
+    item = Sessions[token].GetQuestion()
+    return f"{item}; Token: {token}" #use render_template here
 if __name__ == "__main__":
    app.run()
