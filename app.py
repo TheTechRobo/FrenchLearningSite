@@ -8,6 +8,9 @@ except ImportError:
 app = flask.Flask(__name__)
 app.secret_key = os.urandom(42)
 
+class NopeError(Exception):
+    pass
+
 @app.route("/")
 def Index():
     finish = """
@@ -34,13 +37,17 @@ def Quiz():
     except Exception as ename:
         try:
             session['options'] = {"qset": request.args.get("qset"),"q":request.args.get("q")}
+            for i in list(session['options']):
+                if session['options'][i] is None:
+                    raise NopeError
             session['exist'] = True
             session['qset'] = {"load": {"What is the developer?": {"smart": "Ha!", "dumb": "Meanie"}}, "main":QUESTION_DATABASE[session['options']['qset']]}
             print(session['qset'])
             return list(session['qset']['main'])[0]
+        except NopeError:
+            abort(400)
         except Exception as ename:
             raise
-            abort(400)
     try:
         pos=random.choice(list(session['qset']['main']))
         item=f"pos:{session['qset']['main'][pos]}"
