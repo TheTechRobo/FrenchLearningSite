@@ -1,16 +1,31 @@
 import flask, random, os, json
-from flask import abort, render_template, request, make_response, session
+from flask import abort, render_template, request, make_response, session, url_for
 try:
     from QUESTION_DATABASE import QUESTION_DATABASE
 except ImportError:
     print("WARNING: Could not load QUESTION_DATABASE file! Proceeding with defaults.")
-    QUESTION_DATABASE = {"hi":{"hi": "bye"}, "dd": {"hi": 4}}
+    QUESTION_DATABASE = {"hi":{"hi": "bye", "hi2": "bye3"}, "dd": {"hi": 4}}
 app = flask.Flask(__name__)
 app.secret_key = os.urandom(42)
 
 @app.route("/")
 def Index():
-    return "hi!"
+    finish = """
+<h1>Select a Qset.</h1>
+<form action="Quiz">
+<title>QUIZQUIZQUIZ</title>
+"""
+    for i in QUESTION_DATABASE.keys():
+        finish += f"""
+<input type="radio" name="qset" value="{i}">{i}
+        """
+    finish += """
+<h1>Select the Amount of questions.</h1>
+<input type="radio" name="q" value="inf">ALL<br>
+<button type="submit">Transmit</button>
+</form>
+    """
+    return finish
 
 @app.route("/Quiz")
 def Quiz():
@@ -22,7 +37,9 @@ def Quiz():
             session['exist'] = True
             session['qset'] = {"load": {"What is the developer?": {"smart": "Ha!", "dumb": "Meanie"}}, "main":QUESTION_DATABASE[session['options']['qset']]}
             print(session['qset'])
+            return list(session['qset']['main'])[0]
         except Exception as ename:
+            raise
             abort(400)
     try:
         pos=random.choice(list(session['qset']['main']))
@@ -33,6 +50,9 @@ def Quiz():
     if not item:
         return "All finished! Let's head back, okay?"
     print(session)
-    return f"{item}" #use render_template here
+    hi = ""
+    for i in list(session['qset']['main']):
+        hi += i
+    return hi#use render_template here
 if __name__ == "__main__":
    app.run()
